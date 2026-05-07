@@ -1,0 +1,24 @@
+LCD Resource Tool Memory Report
+================================
+
+LCD PN: LCD-177-A
+Vendor Code: VENDOR_A
+Driver IC: ST7789
+Interface: i80_8bit
+Resolution: 240x320
+Color Format: rgb565
+RGB Order: bgr
+
+Resource count: 2
+Total raw size: 16886 bytes
+Total packed size: 16886 bytes
+Compression ratio: 100.00%
+res.bin size: 16966 bytes
+
+Resources:
+- boot_logo: 64x64, raw_rgb565, raw=8192, packed=8192, crc32=0xD85ECB9E
+- G02_boyact01: 63x69, raw_rgb565, raw=8694, packed=8694, crc32=0xC136FA44
+
+Target RAM: 512 KB
+Target Flash: 8192 KB
+Target PSRAM: yes

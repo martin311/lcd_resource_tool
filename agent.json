@@ -1,0 +1,383 @@
+{
+  "agent_name": "lcd_resource_tool_mvp_agent",
+  "version": "0.1.0",
+  "language": "zh-CN",
+  "project_name": "lcd_resource_tool",
+  "project_goal": "实现第一阶段最小可用版本：PC端工具读取LCD物料数据库、目标平台能力数据库和图片资源清单，生成LCD配置代码、LCD初始化表、res.bin资源包和报告文件。",
+  "working_mode": {
+    "style": "incremental",
+    "do_not_overbuild": true,
+    "prefer_simple_json_over_yaml_excel": true,
+    "first_stage_only": true,
+    "explain_major_decisions_in_comments": true
+  },
+  "scope": {
+    "in_scope": [
+      "建立项目目录结构",
+      "使用Python实现PC端生成工具",
+      "使用JSON作为第一版数据库格式",
+      "读取lcd_database.json",
+      "读取target_profiles.json",
+      "读取resource_manifest.json",
+      "读取init_sequences/*.json",
+      "校验LCD是否支持目标平台",
+      "校验图片资源尺寸和格式",
+      "将PNG/BMP/JPG图片转换为RGB565 raw",
+      "支持简单RLE压缩RGB565数据",
+      "生成res.bin",
+      "生成resource_table.json",
+      "生成ESP32-S3用的lcd_config_generated.h",
+      "生成ESP32-S3用的lcd_init_generated.c",
+      "生成memory_report.txt",
+      "生成target_report.txt",
+      "提供最小README.md",
+      "提供最小测试样例"
+    ],
+    "out_of_scope": [
+      "不做GUI界面",
+      "不接Excel",
+      "不接SQLite",
+      "不做完整LVGL集成",
+      "不做音频编码",
+      "不做字体系统",
+      "不做PNG/JPEG在MCU端动态解码",
+      "不做跨平台HAL大框架",
+      "不做杰理/新唐/蓝汛真实SDK适配",
+      "不做复杂日志系统",
+      "不做云端数据库",
+      "不做自动烧录"
+    ]
+  },
+  "tech_stack": {
+    "language": "Python 3.11+",
+    "required_packages": [
+      "Pillow"
+    ],
+    "avoid_packages": [
+      "pandas",
+      "opencv",
+      "numpy",
+      "jinja2",
+      "pyyaml"
+    ],
+    "reason": "第一版减少依赖，降低Windows环境配置复杂度。代码生成先用Python字符串模板。"
+  },
+  "repository_structure": {
+    "database": [
+      "database/lcd_database.json",
+      "database/target_profiles.json",
+      "database/resource_manifest.json"
+    ],
+    "init_sequences": [
+      "init_sequences/st7789_vendor_a.json",
+      "init_sequences/ili9341_vendor_b.json"
+    ],
+    "assets": [
+      "assets/images/"
+    ],
+    "tools": [
+      "tools/main.py",
+      "tools/lcd_db_loader.py",
+      "tools/target_checker.py",
+      "tools/image_converter.py",
+      "tools/rle_encoder.py",
+      "tools/resource_packer.py",
+      "tools/code_generator.py",
+      "tools/report_generator.py",
+      "tools/utils.py"
+    ],
+    "templates": [
+      "templates/esp32s3/"
+    ],
+    "output": [
+      "output/esp32s3/"
+    ],
+    "docs": [
+      "README.md",
+      "docs/res_bin_format.md",
+      "docs/lcd_database_fields.md"
+    ]
+  },
+  "core_data_formats": {
+    "lcd_database_json": {
+      "description": "LCD物料数据库。每个LCD PN是一条记录。",
+      "required_fields": [
+        "variant_id",
+        "lcd_pn",
+        "vendor_code",
+        "driver_ic",
+        "interface",
+        "hw_id",
+        "h_res",
+        "v_res",
+        "color_format",
+        "rgb_order",
+        "mirror_x",
+        "mirror_y",
+        "swap_xy",
+        "invert_color",
+        "x_gap",
+        "y_gap",
+        "init_sequence",
+        "supported_targets",
+        "status"
+      ]
+    },
+    "target_profiles_json": {
+      "description": "目标芯片能力数据库。",
+      "required_fields": [
+        "target",
+        "lcd_bus",
+        "color_formats",
+        "image_formats",
+        "ram_kb",
+        "flash_kb",
+        "psram",
+        "lvgl"
+      ]
+    },
+    "resource_manifest_json": {
+      "description": "项目资源清单。",
+      "required_fields": [
+        "resource_id",
+        "type",
+        "path",
+        "target_format",
+        "compression"
+      ]
+    },
+    "init_sequence_json": {
+      "description": "LCD初始化命令表。",
+      "required_fields": [
+        "driver_ic",
+        "sequence"
+      ],
+      "sequence_item_fields": [
+        "cmd",
+        "data",
+        "delay_ms"
+      ]
+    }
+  },
+  "res_bin_format_mvp": {
+    "endianness": "little_endian",
+    "header": {
+      "magic": "LRES",
+      "version": 1,
+      "entry_count": "uint32",
+      "index_offset": "uint32",
+      "data_offset": "uint32",
+      "file_size": "uint32"
+    },
+    "entry": {
+      "resource_id_hash": "uint32",
+      "type": "uint16",
+      "format": "uint16",
+      "width": "uint16",
+      "height": "uint16",
+      "offset": "uint32",
+      "compressed_size": "uint32",
+      "raw_size": "uint32",
+      "crc32": "uint32"
+    },
+    "supported_resource_types": [
+      "image"
+    ],
+    "supported_image_formats": [
+      "rgb565",
+      "rgb565_rle"
+    ]
+  },
+  "implementation_plan": [
+    {
+      "step": 1,
+      "title": "创建项目骨架",
+      "tasks": [
+        "创建database、init_sequences、assets/images、tools、templates、output、docs目录",
+        "创建README.md",
+        "创建最小示例JSON文件"
+      ]
+    },
+    {
+      "step": 2,
+      "title": "实现数据库读取和校验",
+      "tasks": [
+        "实现lcd_db_loader.py",
+        "实现target_checker.py",
+        "检查LCD interface是否在target lcd_bus中",
+        "检查LCD color_format是否在target color_formats中",
+        "检查LCD status是否为EVT/DVT/MP"
+      ]
+    },
+    {
+      "step": 3,
+      "title": "实现图片转换",
+      "tasks": [
+        "用Pillow读取PNG/BMP/JPG",
+        "转换为RGB565 little-endian",
+        "输出raw_size",
+        "支持可选RLE压缩"
+      ]
+    },
+    {
+      "step": 4,
+      "title": "实现res.bin打包",
+      "tasks": [
+        "生成LRES header",
+        "生成entry index",
+        "写入资源数据区",
+        "计算crc32",
+        "生成resource_table.json"
+      ]
+    },
+    {
+      "step": 5,
+      "title": "实现代码生成",
+      "tasks": [
+        "生成output/esp32s3/lcd_config_generated.h",
+        "生成output/esp32s3/lcd_init_generated.c",
+        "不要引入ESP-IDF复杂工程，只生成可被ESP32工程include的文件"
+      ]
+    },
+    {
+      "step": 6,
+      "title": "实现报告生成",
+      "tasks": [
+        "生成memory_report.txt",
+        "生成target_report.txt",
+        "报告资源总大小、每张图大小、压缩率、LCD配置摘要、target兼容性"
+      ]
+    },
+    {
+      "step": 7,
+      "title": "提供CLI入口",
+      "tasks": [
+        "实现python tools/main.py build --target esp32s3 --lcd-id 0x01",
+        "实现python tools/main.py check --target esp32s3 --lcd-id 0x01",
+        "实现python tools/main.py pack --target esp32s3"
+      ]
+    }
+  ],
+  "coding_rules": {
+    "python": [
+      "使用标准库优先",
+      "必须有清晰的函数边界",
+      "不要把所有逻辑塞进main.py",
+      "路径使用pathlib.Path",
+      "二进制打包使用struct",
+      "CRC使用zlib.crc32",
+      "错误信息要说明是哪个文件、哪个字段出错",
+      "不要静默失败",
+      "不要使用全局可变状态",
+      "每个模块保持小而清晰"
+    ],
+    "generated_c": [
+      "生成的C文件必须带有AUTO-GENERATED注释",
+      "生成的头文件必须有include guard",
+      "不要依赖复杂HAL",
+      "LCD init table使用struct数组",
+      "cmd/data/delay字段清晰",
+      "variant配置使用宏或const struct"
+    ]
+  },
+  "cli_spec": {
+    "commands": [
+      {
+        "command": "build",
+        "example": "python tools/main.py build --target esp32s3 --lcd-id 0x01",
+        "description": "完整执行check、pack、generate、report"
+      },
+      {
+        "command": "check",
+        "example": "python tools/main.py check --target esp32s3 --lcd-id 0x01",
+        "description": "只检查LCD和target兼容性"
+      },
+      {
+        "command": "pack",
+        "example": "python tools/main.py pack --target esp32s3",
+        "description": "只打包资源"
+      }
+    ]
+  },
+  "sample_lcd_records": [
+    {
+      "variant_id": "0x01",
+      "lcd_pn": "LCD-177-A",
+      "vendor_code": "VENDOR_A",
+      "driver_ic": "ST7789",
+      "interface": "i80_8bit",
+      "hw_id": "0b001",
+      "h_res": 240,
+      "v_res": 320,
+      "color_format": "rgb565",
+      "rgb_order": "bgr",
+      "mirror_x": false,
+      "mirror_y": true,
+      "swap_xy": false,
+      "invert_color": true,
+      "x_gap": 0,
+      "y_gap": 20,
+      "init_sequence": "st7789_vendor_a.json",
+      "supported_targets": [
+        "esp32s3"
+      ],
+      "status": "EVT"
+    },
+    {
+      "variant_id": "0x02",
+      "lcd_pn": "LCD-240-B",
+      "vendor_code": "VENDOR_B",
+      "driver_ic": "ILI9341",
+      "interface": "spi",
+      "hw_id": "0b010",
+      "h_res": 240,
+      "v_res": 320,
+      "color_format": "rgb565",
+      "rgb_order": "rgb",
+      "mirror_x": false,
+      "mirror_y": false,
+      "swap_xy": false,
+      "invert_color": false,
+      "x_gap": 0,
+      "y_gap": 0,
+      "init_sequence": "ili9341_vendor_b.json",
+      "supported_targets": [
+        "esp32s3"
+      ],
+      "status": "EVT"
+    }
+  ],
+  "acceptance_criteria": [
+    "运行python tools/main.py build --target esp32s3 --lcd-id 0x01后不会报错",
+    "output/esp32s3/res.bin被生成",
+    "output/esp32s3/lcd_config_generated.h被生成",
+    "output/esp32s3/lcd_init_generated.c被生成",
+    "output/esp32s3/resource_table.json被生成",
+    "output/esp32s3/memory_report.txt被生成",
+    "output/esp32s3/target_report.txt被生成",
+    "如果target不支持LCD接口，工具必须明确报错",
+    "如果图片文件不存在，工具必须明确报错",
+    "如果init_sequence字段缺失，工具必须明确报错",
+    "README.md必须说明如何安装依赖和运行demo命令"
+  ],
+  "definition_of_done": {
+    "mvp_done_when": [
+      "可以用JSON数据库描述两款LCD",
+      "可以用JSON描述一个ESP32-S3 target",
+      "可以把至少一张图片转成RGB565并打包进res.bin",
+      "可以生成ESP32-S3可引用的LCD配置头文件和初始化C文件",
+      "可以输出清晰的人类可读报告",
+      "代码结构清楚，后续能接Excel/YAML/杰理输出模板"
+    ]
+  },
+  "developer_notes_for_codex": [
+    "不要一次性实现过多功能。每次提交只完成一个小模块。",
+    "优先保证目录结构、数据格式和命令跑通。",
+    "发现设计冲突时，优先选择更简单、更少依赖、更容易在Windows运行的方案。",
+    "不要引入数据库服务器、Web框架或GUI。",
+    "不要把ESP-IDF工程完整生成出来，第一版只生成ESP32-S3工程可include的配置文件。",
+    "如果需要测试图片，可以自动生成一张小的RGB测试图，例如64x64 color blocks。",
+    "所有生成文件统一放入output/<target>/目录。",
+    "工具失败时返回非零退出码。"
+  ]
+}

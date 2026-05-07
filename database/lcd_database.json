@@ -1,0 +1,46 @@
+{
+  "lcds": [
+    {
+      "variant_id": "0x01",
+      "lcd_pn": "LCD-177-A",
+      "vendor_code": "VENDOR_A",
+      "driver_ic": "ST7789",
+      "interface": "i80_8bit",
+      "hw_id": "0b001",
+      "h_res": 240,
+      "v_res": 320,
+      "color_format": "rgb565",
+      "rgb_order": "bgr",
+      "mirror_x": false,
+      "mirror_y": true,
+      "swap_xy": false,
+      "invert_color": true,
+      "x_gap": 0,
+      "y_gap": 20,
+      "init_sequence": "st7789_vendor_a.json",
+      "supported_targets": ["esp32s3"],
+      "status": "EVT"
+    },
+    {
+      "variant_id": "0x02",
+      "lcd_pn": "LCD-240-B",
+      "vendor_code": "VENDOR_B",
+      "driver_ic": "ILI9341",
+      "interface": "spi",
+      "hw_id": "0b010",
+      "h_res": 240,
+      "v_res": 320,
+      "color_format": "rgb565",
+      "rgb_order": "rgb",
+      "mirror_x": false,
+      "mirror_y": false,
+      "swap_xy": false,
+      "invert_color": false,
+      "x_gap": 0,
+      "y_gap": 0,
+      "init_sequence": "ili9341_vendor_b.json",
+      "supported_targets": ["esp32s3"],
+      "status": "EVT"
+    }
+  ]
+}

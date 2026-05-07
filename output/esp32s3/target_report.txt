@@ -1,0 +1,25 @@
+LCD Resource Tool Target Report
+===============================
+
+Target: esp32s3
+Target RAM/Flash: 512 KB RAM / 8192 KB Flash
+Target PSRAM: yes
+Target LCD Bus: i80_8bit, spi
+Target Color Formats: rgb565
+
+LCD PN: LCD-177-A
+Vendor Code: VENDOR_A
+Driver IC: ST7789
+Interface: i80_8bit
+Resolution: 240x320
+Color Format: rgb565
+RGB Order: bgr
+Init Sequence: st7789_vendor_a.json
+
+Compatibility: passed
+Resource count: 2
+Total raw size: 16886 bytes
+Total packed size: 16886 bytes
+Compression ratio: 100.00%
+res.bin: D:\ARM_Repository\esp_project\lcd_resource_tool\output\esp32s3\res.bin
+resource_table.json: D:\ARM_Repository\esp_project\lcd_resource_tool\output\esp32s3\resource_table.json

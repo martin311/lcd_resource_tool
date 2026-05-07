@@ -1,0 +1,19 @@
+{
+  "resources": [
+    {
+      "resource_id": "boot_logo",
+      "type": "image",
+      "path": "assets/images/boot_logo.png",
+      "target_format": "rgb565",
+      "compression": "none"
+    },
+
+    {
+      "resource_id": "G02_boyact01",
+      "type": "image",
+      "path": "assets/images/G02_boyact01.bmp",
+      "target_format": "rgb565",
+      "compression": "none"
+    }
+  ]
+}

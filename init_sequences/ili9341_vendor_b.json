@@ -1,0 +1,30 @@
+{
+  "driver_ic": "ILI9341",
+  "sequence": [
+    {
+      "cmd": "0x01",
+      "data": [],
+      "delay_ms": 5
+    },
+    {
+      "cmd": "0x28",
+      "data": [],
+      "delay_ms": 0
+    },
+    {
+      "cmd": "0x3A",
+      "data": ["0x55"],
+      "delay_ms": 0
+    },
+    {
+      "cmd": "0x11",
+      "data": [],
+      "delay_ms": 120
+    },
+    {
+      "cmd": "0x29",
+      "data": [],
+      "delay_ms": 20
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "targets": [
+    {
+      "target": "esp32s3",
+      "lcd_bus": ["i80_8bit", "spi"],
+      "color_formats": ["rgb565"],
+      "image_formats": ["png", "bmp", "jpg"],
+      "ram_kb": 512,
+      "flash_kb": 8192,
+      "psram": true,
+      "lvgl": false
+    }
+  ]
+}
